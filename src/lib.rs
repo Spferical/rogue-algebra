@@ -4,8 +4,9 @@
 //!
 //! Key choices/limitations are:
 //! - A map is an infinite 2d cartesian grid. Internally, it's stored in
-//!   a hashmap of NxN chunks.
+//!   a hashmap of NxN chunks. Never worry about out-of-bounds again.
 //! - Positions and offsets are separate types with algebraic helper methods.
+//!   Also, rectangles. Write fewer 2D x/y loops!
 use std::{
     collections::HashMap,
     f64::consts::PI,
