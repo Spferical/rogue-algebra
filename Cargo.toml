@@ -1,0 +1,8 @@
+[package]
+name = "rogue-algebra"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+indexmap = "2.2.5"
+rand = { version = "0.8.5", default-features = false }
