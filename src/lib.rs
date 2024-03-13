@@ -1,4 +1,3 @@
-#![allow(unused)]
 use std::{
     f64::consts::PI,
     ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Sub},
@@ -408,6 +407,7 @@ impl Rect {
             y: avg!(self.y1, self.y2),
         }
     }
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.width() as usize * self.height() as usize
     }
