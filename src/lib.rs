@@ -1,3 +1,12 @@
+//! Infinite cartesian grid library for roguelike development.
+//!
+//! Inspired by Jeff Lait's "Toward an Algebra of Roguelikes" talk.
+//!
+//! Key opinionated decisions are:
+//! - the map is an infinite 2d cartesian grid. Internally, it's stored in
+//!   a hashmap of NxN chunks.
+//! - positions and offsets are separate and have many methods to make
+//!   writing x/y
 use std::{
     f64::consts::PI,
     ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Sub},
