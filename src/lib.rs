@@ -228,7 +228,7 @@ struct ChunkIndex {
 }
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
-pub struct Chunk<Tile> {
+struct Chunk<Tile> {
     grid: Vec<Vec<Tile>>,
 }
 
