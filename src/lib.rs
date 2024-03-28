@@ -92,7 +92,7 @@ impl Offset {
         self.x * self.x + self.y * self.y
     }
 
-    /// Returns the closest cardinal direction aligned with this offset, rounding CCW.
+    /// Returns the closest cardinal direction aligned with this offset, rounding clockwise.
     #[must_use]
     pub fn nearest_cardinal(self) -> Self {
         let angle = f64::from(self.y).atan2(f64::from(self.x));
@@ -158,9 +158,9 @@ impl Div<i32> for Offset {
 }
 
 /// A cardinal direction in the negative y direction.
-pub const NORTH: Offset = Offset { x: 0, y: -1 };
+pub const SOUTH: Offset = Offset { x: 0, y: -1 };
 /// A cardinal direction in the positive y direction.
-pub const SOUTH: Offset = Offset { x: 0, y: 1 };
+pub const NORTH: Offset = Offset { x: 0, y: 1 };
 /// A cardinal direction in the negative x direction.
 pub const WEST: Offset = Offset { x: -1, y: 0 };
 /// A cardinal direction in the positive x direction.
@@ -588,13 +588,13 @@ mod tests {
 
     #[test]
     fn test_nearest_cardinal() {
-        assert_eq!(Offset { x: 1, y: -30 }.nearest_cardinal(), NORTH);
+        assert_eq!(Offset { x: 1, y: -30 }.nearest_cardinal(), SOUTH);
         assert_eq!(Offset { x: 30, y: 1 }.nearest_cardinal(), EAST);
 
-        // Rounds ccw.
-        assert_eq!(Offset { x: 1, y: 1 }.nearest_cardinal(), SOUTH);
+        // Rounds clockwise.
+        assert_eq!(Offset { x: 1, y: 1 }.nearest_cardinal(), NORTH);
         assert_eq!(Offset { x: -1, y: 1 }.nearest_cardinal(), WEST);
-        assert_eq!(Offset { x: -1, y: -1 }.nearest_cardinal(), NORTH);
+        assert_eq!(Offset { x: -1, y: -1 }.nearest_cardinal(), SOUTH);
         assert_eq!(Offset { x: 1, y: -1 }.nearest_cardinal(), EAST);
     }
 }
