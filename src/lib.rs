@@ -4,7 +4,7 @@
 //!
 //! Key choices/limitations are:
 //! - A map is an infinite 2d cartesian grid. Internally, it's stored in
-//!   a hashmap of NxN chunks. Never worry about out-of-bounds again.
+//!   a hashmap of `NxN` chunks. Never worry about out-of-bounds again.
 //! - Positions and offsets are separate types with algebraic helper methods.
 //!   Also, rectangles. Write fewer 2D x/y loops!
 use std::{
@@ -50,11 +50,13 @@ pub struct Pos {
 
 impl Pos {
     /// Creates a new Pos at coordinate (x, y).
+    #[must_use]
     pub fn new(x: i32, y: i32) -> Pos {
         Pos { x, y }
     }
 
     /// Returns the four adjacent positions to this Pos in cardinal directions.
+    #[must_use]
     pub fn adjacent_cardinal(&self) -> [Pos; 4] {
         CARDINALS.map(|c| *self + c)
     }
@@ -73,21 +75,25 @@ impl Offset {
     /// The number of tiles it would take to walk walk to the other end of this
     /// Offset if one is allowed to move diagonally and diagonal moves cost the
     /// same as cardinal direction moves.
+    #[must_use]
     pub fn diag_walk_dist(self) -> i32 {
         self.x.abs().max(self.y.abs())
     }
 
     /// The Manhattan distance between two positions, x + y.
+    #[must_use]
     pub fn mhn_dist(self) -> i32 {
         self.x.abs() + self.y.abs()
     }
 
     /// The squared euclidean distance between two positions.
+    #[must_use]
     pub fn dist_squared(self) -> i32 {
         self.x * self.x + self.y * self.y
     }
 
     /// Returns the closest cardinal direction aligned with this offset, rounding CCW.
+    #[must_use]
     pub fn nearest_cardinal(self) -> Self {
         let angle = f64::from(self.y).atan2(f64::from(self.x));
         let mut octant = (8f64 * angle / (2f64 * PI) + 8f64) as usize;
@@ -100,6 +106,7 @@ impl Offset {
 
     /// Normalizes the x and y axes of this offset independently. That is,
     /// x and y are each constrained to the range [-1, 1].
+    #[must_use]
     pub fn norm(self) -> Self {
         Offset {
             x: self.x.signum(),
@@ -108,6 +115,7 @@ impl Offset {
     }
 
     /// Rotates this offset 90 degrees clockwise.
+    #[must_use]
     pub fn rot_cw(self) -> Self {
         Offset {
             x: self.y,
@@ -116,11 +124,13 @@ impl Offset {
     }
 
     /// Flips this offset 180 degrees.
+    #[must_use]
     pub fn flip(self) -> Self {
         self.rot_cw().rot_cw()
     }
 
     /// Rotates this offset 90 degrees counterclockwise.
+    #[must_use]
     pub fn rot_ccw(self) -> Self {
         self.flip().rot_cw()
     }
@@ -250,7 +260,7 @@ pub struct TileMap<Tile> {
 }
 
 impl<Tile: Clone> TileMap<Tile> {
-    /// Creates a new TileMap, an infinite grid filled with `default_tile`.
+    /// Creates a new `TileMap`, an infinite grid filled with `default_tile`.
     pub fn new(default_tile: Tile) -> Self {
         TileMap {
             chunks: HashMap::new(),
@@ -301,6 +311,7 @@ pub struct Rect {
 
 impl Rect {
     /// Creates a new Rect centered at `center` with the given width and height.
+    #[must_use]
     pub fn new_centered(center: Pos, width: i32, height: i32) -> Self {
         assert!(width >= 1 && height >= 1);
         // w=1 => [x, x]
@@ -318,6 +329,7 @@ impl Rect {
         }
     }
     /// Returns the topleft position in this rectangle.
+    #[must_use]
     pub fn topleft(&self) -> Pos {
         Pos {
             x: self.x1,
@@ -325,6 +337,7 @@ impl Rect {
         }
     }
     /// Returns the topright position in this rectangle.
+    #[must_use]
     pub fn topright(&self) -> Pos {
         Pos {
             x: self.x2,
@@ -332,6 +345,7 @@ impl Rect {
         }
     }
     /// Returns the bottomleft position in this rectangle.
+    #[must_use]
     pub fn bottomleft(&self) -> Pos {
         Pos {
             x: self.x1,
@@ -339,6 +353,7 @@ impl Rect {
         }
     }
     /// Returns the bottomright position in this rectangle.
+    #[must_use]
     pub fn bottomright(&self) -> Pos {
         Pos {
             x: self.x2,
@@ -346,10 +361,12 @@ impl Rect {
         }
     }
     /// Returns the number of colums in this rectangle.
+    #[must_use]
     pub fn width(&self) -> i32 {
         self.x2 - self.x1 + 1
     }
     /// Returns the number of rows in this rectangle.
+    #[must_use]
     pub fn height(&self) -> i32 {
         self.y2 - self.y1 + 1
     }
@@ -397,7 +414,7 @@ impl Rect {
                 y2: self.y2 - 1,
             });
         }
-        let num_valid_squares = valid_rects.iter().map(|r| r.len()).sum::<usize>();
+        let num_valid_squares = valid_rects.iter().map(Rect::len).sum::<usize>();
         let rand = rng.gen_range(0..num_valid_squares);
         let mut running_len = 0;
         for rect in valid_rects {
@@ -410,15 +427,18 @@ impl Rect {
     }
     /// Creates a new rectangle covering colums [`x1`, `x2`] and rows
     /// [`y1`, `y2`].
+    #[must_use]
     pub fn new(x1: i32, x2: i32, y1: i32, y2: i32) -> Self {
         assert!(x1 <= x2 && y1 <= y2);
         Rect { x1, y1, x2, y2 }
     }
     /// Creates a 1-tile rectangle containing only `pos`.
+    #[must_use]
     pub fn smol(pos: Pos) -> Self {
         Self::new(pos.x, pos.x, pos.y, pos.y)
     }
     /// Creates the smallest rectangle containing all `positions`.
+    #[must_use]
     pub fn new_containing(positions: &[Pos]) -> Self {
         assert!(!positions.is_empty());
         let mut min_x = i32::MAX;
@@ -434,10 +454,9 @@ impl Rect {
         Self::new(min_x, max_x, min_y, max_y)
     }
     /// Returns a rectangle expanded `amt` tiles in each cardinal direction.
+    #[must_use]
     pub fn expand(mut self, amt: i32) -> Self {
-        if amt < 0 {
-            panic!("Cannot expand a rectangle by a negative amount.")
-        }
+        assert!(amt >= 0, "Cannot expand a rectangle by a negative amount.");
         self.x1 -= amt;
         self.x2 += amt;
         self.y1 -= amt;
@@ -448,6 +467,7 @@ impl Rect {
     /// Returns a rectangle shrunk `amt` tiles in each cardinal direction.
     /// Will not shrink a rectangle below size 1; a 1-size rectangle
     /// will be returned instead.
+    #[must_use]
     pub fn shrink(mut self, amt: i32) -> Self {
         self.x1 += amt;
         self.x2 -= amt;
@@ -464,11 +484,13 @@ impl Rect {
         self
     }
     /// Returns true if this rectangle contains `pos`.
+    #[must_use]
     pub fn contains(&self, pos: Pos) -> bool {
         pos.x >= self.x1 && pos.x <= self.x2 && pos.y >= self.y1 && pos.y <= self.y2
     }
     /// Returns the center of this rectangle. Rounds to the topleft in case of
     /// even width and/or height.
+    #[must_use]
     pub fn center(&self) -> Pos {
         Pos {
             x: avg!(self.x1, self.x2),
@@ -477,10 +499,12 @@ impl Rect {
     }
     /// Returns the number of tiles contained in this rectangle.
     #[allow(clippy::len_without_is_empty)]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.width() as usize * self.height() as usize
     }
     /// Returns the 1-height rectangle along the bottom edge of `self`.
+    #[must_use]
     pub fn bottom_edge(&self) -> Rect {
         Rect {
             x1: self.x1,
@@ -490,6 +514,7 @@ impl Rect {
         }
     }
     /// Returns the 1-height rectangle along the top edge of `self`.
+    #[must_use]
     pub fn top_edge(&self) -> Rect {
         Rect {
             x1: self.x1,
@@ -499,6 +524,7 @@ impl Rect {
         }
     }
     /// Returns the 1-width rectangle along the left edge of `self`.
+    #[must_use]
     pub fn left_edge(&self) -> Rect {
         Rect {
             x1: self.x1,
@@ -508,6 +534,7 @@ impl Rect {
         }
     }
     /// Returns the 1-width rectangle along the right edge of `self`.
+    #[must_use]
     pub fn right_edge(&self) -> Rect {
         Rect {
             x1: self.x2,
@@ -518,6 +545,7 @@ impl Rect {
     }
 
     /// Returns whether `self` intersects `other` at any position.
+    #[must_use]
     pub fn intersects(&self, other: &Rect) -> bool {
         self.x1 <= other.x2 && self.x2 >= other.x1 && self.y1 <= other.y2 && self.y2 >= other.y1
     }
