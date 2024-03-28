@@ -87,13 +87,14 @@ impl Offset {
         self.x * self.x + self.y * self.y
     }
 
-    /// Returns the closest cardinal direction aligned with this offset.
+    /// Returns the closest cardinal direction aligned with this offset, rounding CCW.
     pub fn nearest_cardinal(self) -> Self {
         let angle = f64::from(self.y).atan2(f64::from(self.x));
-        let mut octant = (8f64 * angle / (2f64 * PI) + 8f64) as usize % 8;
+        let mut octant = (8f64 * angle / (2f64 * PI) + 8f64) as usize;
         if octant % 2 == 1 {
-            octant -= 1;
+            octant += 1;
         }
+        octant %= 8;
         DIRECTIONS[octant]
     }
 
@@ -550,5 +551,22 @@ impl IntoIterator for Rect {
     type IntoIter = RectIter;
     fn into_iter(self) -> Self::IntoIter {
         RectIter { rect: self, idx: 0 }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nearest_cardinal() {
+        assert_eq!(Offset { x: 1, y: -30 }.nearest_cardinal(), NORTH);
+        assert_eq!(Offset { x: 30, y: 1 }.nearest_cardinal(), EAST);
+
+        // Rounds ccw.
+        assert_eq!(Offset { x: 1, y: 1 }.nearest_cardinal(), SOUTH);
+        assert_eq!(Offset { x: -1, y: 1 }.nearest_cardinal(), WEST);
+        assert_eq!(Offset { x: -1, y: -1 }.nearest_cardinal(), NORTH);
+        assert_eq!(Offset { x: 1, y: -1 }.nearest_cardinal(), EAST);
     }
 }
