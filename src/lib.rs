@@ -40,7 +40,7 @@ macro_rules! modulo {
     };
 }
 
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, PartialOrd, Ord)]
 /// Position of a tile.
 pub struct Pos {
     /// The x-coordinate of this position, increasing from west to east.
