@@ -230,13 +230,13 @@ struct ChunkIndex {
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 struct Chunk<Tile> {
-    grid: Vec<Vec<Tile>>,
+    grid: Vec<Tile>,
 }
 
 impl<Tile: Clone> Chunk<Tile> {
     fn new_filled(tile: Tile) -> Self {
         Self {
-            grid: vec![vec![tile; CHUNKSIZE]; CHUNKSIZE],
+            grid: vec![tile; CHUNKSIZE * CHUNKSIZE],
         }
     }
 }
@@ -264,9 +264,10 @@ impl<Tile: Clone> Index<Pos> for TileMap<Tile> {
     fn index(&self, pos: Pos) -> &Tile {
         let chunk_index = get_chunk_index(pos);
         let chunk = self.chunks.get(&chunk_index).unwrap_or(&self.default_chunk);
-        let chunk_offset_x = modulo!(pos.x, CHUNKSIZE as i32);
-        let chunk_offset_y = modulo!(pos.y, CHUNKSIZE as i32);
-        &chunk.grid[chunk_offset_x as usize][chunk_offset_y as usize]
+        let chunk_offset_x = modulo!(pos.x, CHUNKSIZE as i32) as usize;
+        let chunk_offset_y = modulo!(pos.y, CHUNKSIZE as i32) as usize;
+        let chunk_offset = chunk_offset_y * CHUNKSIZE + chunk_offset_x;
+        &chunk.grid[chunk_offset]
     }
 }
 
@@ -277,9 +278,10 @@ impl<Tile: Clone> IndexMut<Pos> for TileMap<Tile> {
             .chunks
             .entry(chunk_index)
             .or_insert_with(|| self.default_chunk.clone());
-        let chunk_offset_x = modulo!(pos.x, CHUNKSIZE as i32);
-        let chunk_offset_y = modulo!(pos.y, CHUNKSIZE as i32);
-        &mut chunk.grid[chunk_offset_x as usize][chunk_offset_y as usize]
+        let chunk_offset_x = modulo!(pos.x, CHUNKSIZE as i32) as usize;
+        let chunk_offset_y = modulo!(pos.y, CHUNKSIZE as i32) as usize;
+        let chunk_offset = chunk_offset_y * CHUNKSIZE + chunk_offset_x;
+        &mut chunk.grid[chunk_offset]
     }
 }
 
