@@ -682,7 +682,7 @@ mod tests {
         positions.sort();
         assert_eq!(positions, expected_positions);
 
-        for pos in r.into_iter() {
+        for pos in r {
             assert!(r.intersects(&Rect::smol(pos)));
             assert!(r.contains(pos));
         }
