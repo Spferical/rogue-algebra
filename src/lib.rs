@@ -71,9 +71,9 @@ pub struct Offset {
 
 impl Offset {
     /// The number of tiles it would take to walk walk to the other end of this
-    /// Offset, if one is allowed to move diagonally and diagonal moves cost the
+    /// Offset if one is allowed to move diagonally and diagonal moves cost the
     /// same as cardinal direction moves.
-    pub fn diag_dist(self) -> i32 {
+    pub fn diag_walk_dist(self) -> i32 {
         self.x.abs().max(self.y.abs())
     }
 
