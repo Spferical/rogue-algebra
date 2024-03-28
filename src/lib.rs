@@ -603,4 +603,97 @@ mod tests {
         assert_eq!(Offset { x: -1, y: -1 }.nearest_cardinal(), SOUTH);
         assert_eq!(Offset { x: 1, y: -1 }.nearest_cardinal(), EAST);
     }
+
+    #[test]
+    fn test_rect_trivial() {
+        let origin = Pos { x: 0, y: 0 };
+        let r = Rect::new_centered(origin, 1, 1);
+        assert_eq!(r, Rect::smol(origin));
+        assert_eq!(r, Rect::new_containing(&[origin]));
+        assert_eq!(r, r.shrink(1));
+        assert_eq!(r, r.expand(1).shrink(1));
+        assert_eq!(r.topleft(), origin);
+        assert_eq!(r.topright(), origin);
+        assert_eq!(r.bottomleft(), origin);
+        assert_eq!(r.bottomright(), origin);
+        assert_eq!(r.width(), 1);
+        assert_eq!(r.height(), 1);
+        let mut rng = rand::thread_rng();
+        assert_eq!(r.choose(&mut rng), origin);
+        assert_eq!(r.choose_edge(&mut rng), origin);
+        assert_eq!(r.center(), origin);
+        assert!(r.contains(origin));
+        assert_eq!(r.len(), 1);
+        assert_eq!(r, r.bottom_edge());
+        assert_eq!(r, r.top_edge());
+        assert_eq!(r, r.left_edge());
+        assert_eq!(r, r.right_edge());
+        assert!(r.intersects(&r));
+        assert_eq!(r.into_iter().collect::<Vec<_>>(), vec![origin]);
+    }
+
+    #[test]
+    fn test_rect_3x3() {
+        let r = Rect::new_centered(Pos::new(10, 20), 3, 3);
+        assert_eq!(
+            r,
+            Rect::new_containing(&[Pos::new(9, 19), Pos::new(11, 21)])
+        );
+        assert_eq!(r, Rect::new(9, 11, 19, 21));
+        assert_eq!(r.shrink(1), Rect::smol(Pos::new(10, 20)));
+        assert_eq!(r.shrink(5), Rect::smol(Pos::new(10, 20)));
+        assert_eq!(r.expand(5), Rect::new(4, 16, 14, 26));
+        assert_eq!(r.topleft(), Pos::new(9, 21));
+        assert_eq!(r.topright(), Pos::new(11, 21));
+        assert_eq!(r.bottomleft(), Pos::new(9, 19));
+        assert_eq!(r.bottomright(), Pos::new(11, 19));
+        assert_eq!(r.width(), 3);
+        assert_eq!(r.height(), 3);
+        assert_eq!(r.len(), 9);
+        let mut rng = rand::thread_rng();
+        assert!(r.contains(r.choose_edge(&mut rng)));
+        assert!(r.contains(r.choose(&mut rng)));
+        assert!(r.choose_edge(&mut rng) != r.center());
+        assert_eq!(
+            r.bottom_edge(),
+            Rect::new_containing(&[r.bottomleft(), r.bottomright()])
+        );
+        assert_eq!(
+            r.top_edge(),
+            Rect::new_containing(&[r.topleft(), r.topright()])
+        );
+        assert_eq!(
+            r.left_edge(),
+            Rect::new_containing(&[r.topleft(), r.bottomleft()])
+        );
+        assert_eq!(
+            r.right_edge(),
+            Rect::new_containing(&[r.bottomright(), r.topright()])
+        );
+
+        let mut expected_positions = Vec::new();
+        for x in 9..=11 {
+            for y in 19..=21 {
+                expected_positions.push(Pos::new(x, y));
+            }
+        }
+        expected_positions.sort();
+        let mut positions = r.into_iter().collect::<Vec<_>>();
+        positions.sort();
+        assert_eq!(positions, expected_positions);
+
+        for pos in r.into_iter() {
+            assert!(r.intersects(&Rect::smol(pos)));
+            assert!(r.contains(pos));
+        }
+
+        assert!(r.intersects(&r.left_edge()));
+        assert!(r.intersects(&r.right_edge()));
+        assert!(r.intersects(&r.bottom_edge()));
+        assert!(r.intersects(&r.top_edge()));
+        assert!(r.intersects(&Rect::new(11, 13, 21, 2000)));
+        assert!(r.intersects(&Rect::new(-4000, 10, 9, 20)));
+        assert!(!r.intersects(&Rect::new(0, 0, 0, 0)));
+        assert!(!r.intersects(&Rect::new(11, 13, 22, 2000)));
+    }
 }
