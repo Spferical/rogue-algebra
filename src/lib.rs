@@ -72,6 +72,11 @@ pub struct Offset {
 }
 
 impl Offset {
+    /// Creates a new offset (x, y).
+    #[must_use]
+    pub fn new(x: i32, y: i32) -> Offset {
+        Offset { x, y }
+    }
     /// The number of tiles it would take to walk walk to the other end of this
     /// Offset if one is allowed to move diagonally and diagonal moves cost the
     /// same as cardinal direction moves.
