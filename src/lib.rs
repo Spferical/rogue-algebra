@@ -7,6 +7,7 @@
 //!   a hashmap of `NxN` chunks. Never worry about out-of-bounds again.
 //! - Positions and offsets are separate types with algebraic helper methods.
 //!   Also, rectangles. Write fewer 2D x/y loops!
+//! - North is +y, and East is +x.
 use std::{
     collections::HashMap,
     f64::consts::PI,
@@ -338,7 +339,7 @@ impl Rect {
     pub fn topleft(&self) -> Pos {
         Pos {
             x: self.x1,
-            y: self.y1,
+            y: self.y2,
         }
     }
     /// Returns the topright position in this rectangle.
@@ -346,7 +347,7 @@ impl Rect {
     pub fn topright(&self) -> Pos {
         Pos {
             x: self.x2,
-            y: self.y1,
+            y: self.y2,
         }
     }
     /// Returns the bottomleft position in this rectangle.
@@ -354,7 +355,7 @@ impl Rect {
     pub fn bottomleft(&self) -> Pos {
         Pos {
             x: self.x1,
-            y: self.y2,
+            y: self.y1,
         }
     }
     /// Returns the bottomright position in this rectangle.
@@ -362,7 +363,7 @@ impl Rect {
     pub fn bottomright(&self) -> Pos {
         Pos {
             x: self.x2,
-            y: self.y2,
+            y: self.y1,
         }
     }
     /// Returns the number of colums in this rectangle.
@@ -513,9 +514,9 @@ impl Rect {
     pub fn bottom_edge(&self) -> Rect {
         Rect {
             x1: self.x1,
-            y1: self.y2,
+            y1: self.y1,
             x2: self.x2,
-            y2: self.y2,
+            y2: self.y1,
         }
     }
     /// Returns the 1-height rectangle along the top edge of `self`.
@@ -523,9 +524,9 @@ impl Rect {
     pub fn top_edge(&self) -> Rect {
         Rect {
             x1: self.x1,
-            y1: self.y1,
+            y1: self.y2,
             x2: self.x2,
-            y2: self.y1,
+            y2: self.y2,
         }
     }
     /// Returns the 1-width rectangle along the left edge of `self`.
