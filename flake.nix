@@ -63,9 +63,6 @@
         # artifacts from above.
         my-crate = craneLib.buildPackage (commonArgs // {
           inherit cargoArtifacts;
-          postInstall = ''
-            wrapProgram "$out/bin/run" --set LD_LIBRARY_PATH "${lib.makeLibraryPath commonArgs.buildInputs}";
-          '';
         });
       in
       {
