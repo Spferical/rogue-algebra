@@ -16,6 +16,8 @@ use std::{
 
 use rand::Rng;
 
+pub mod fov;
+
 const CHUNKSIZE: usize = 16;
 
 macro_rules! avg {
