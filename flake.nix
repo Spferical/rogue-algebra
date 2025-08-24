@@ -1,16 +1,22 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/release-25.05";
 
     crane = {
       url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     fenix = {
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.rust-analyzer-src.follows = "";
+    };
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+      };
     };
 
     flake-utils.url = "github:numtide/flake-utils";
@@ -21,16 +27,17 @@
     };
   };
 
-  outputs = { self, nixpkgs, crane, fenix, flake-utils, advisory-db, ... }:
+  outputs = { self, nixpkgs, crane, fenix, flake-utils, advisory-db, rust-overlay, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
+          overlays = [ (import rust-overlay) ];
         };
 
         inherit (pkgs) lib;
 
-        craneLib = crane.lib.${system};
+        craneLib = (crane.mkLib pkgs).overrideToolchain pkgs.rust-bin.stable.latest.default;
         src = lib.cleanSourceWith {
           src = craneLib.path ./.;
           filter = path: type: (craneLib.filterCargoSources path type) || (builtins.match ".*/static/.*$" path != null);
