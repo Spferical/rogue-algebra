@@ -17,6 +17,7 @@ use std::{
 use rand::Rng;
 
 pub mod fov;
+pub mod path;
 
 const CHUNKSIZE: usize = 16;
 
@@ -275,6 +276,24 @@ impl<Tile: Clone> TileMap<Tile> {
             default_chunk: Chunk::new_filled(default_tile),
         }
     }
+
+    pub fn iter(&'_ self) -> impl Iterator<Item = (Pos, Tile)> + '_ {
+        self.chunks.iter().flat_map(|(ci, chunk)| {
+            chunk.grid.iter().enumerate().map(|(ti, tile)| {
+                let pos = Pos {
+                    x: ci.x * CHUNKSIZE as i32 + modulo!(ti, CHUNKSIZE) as i32,
+                    y: ci.y * CHUNKSIZE as i32 + (ti / CHUNKSIZE) as i32,
+                };
+                (pos, tile.clone())
+            })
+        })
+    }
+
+    pub fn set_rect(&mut self, rect: Rect, tile: Tile) {
+        for p in rect {
+            self[p] = tile.clone();
+        }
+    }
 }
 
 impl<Tile: Clone> Index<Pos> for TileMap<Tile> {
@@ -471,6 +490,20 @@ impl Rect {
         self.y2 += amt;
         self
     }
+    #[must_use]
+    pub fn expand_x(mut self, amt: i32) -> Self {
+        assert!(amt >= 0, "Cannot expand a rectangle by a negative amount.");
+        self.x1 -= amt;
+        self.x2 += amt;
+        self
+    }
+    #[must_use]
+    pub fn expand_y(mut self, amt: i32) -> Self {
+        assert!(amt >= 0, "Cannot expand a rectangle by a negative amount.");
+        self.y1 -= amt;
+        self.y2 += amt;
+        self
+    }
 
     /// Returns a rectangle shrunk `amt` tiles in each cardinal direction.
     /// Will not shrink a rectangle below size 1; a 1-size rectangle
@@ -557,6 +590,35 @@ impl Rect {
     pub fn intersects(&self, other: &Rect) -> bool {
         self.x1 <= other.x2 && self.x2 >= other.x1 && self.y1 <= other.y2 && self.y2 >= other.y1
     }
+
+    #[must_use]
+    pub fn intersect(&self, other: &Rect) -> Option<Rect> {
+        self.intersects(other).then_some(Rect {
+            x1: self.x1.max(other.x1),
+            y1: self.y1.max(other.y1),
+            x2: self.x2.min(other.x2),
+            y2: self.y2.min(other.y2),
+        })
+    }
+    #[must_use]
+    pub fn shift_to_right_of(&self, other: Rect) -> Rect {
+        let offset_x = ((other.x2 + 1) - self.x1).max(0);
+        *self + Offset::new(offset_x, 0)
+    }
+}
+
+impl Add<Offset> for Rect {
+    type Output = Rect;
+
+    fn add(self, rhs: Offset) -> Self::Output {
+        let Rect { x1, y1, x2, y2 } = self;
+        Self {
+            x1: x1 + rhs.x,
+            y1: y1 + rhs.y,
+            x2: x2 + rhs.x,
+            y2: y2 + rhs.y,
+        }
+    }
 }
 
 /// Iterator over the positions in a rectangle. Goes row-by-row from the
@@ -590,6 +652,35 @@ impl IntoIterator for Rect {
     }
 }
 
+#[cfg(feature = "bevy15")]
+mod bevy15 {
+    use super::*;
+    impl From<Pos> for bevy15_math::IVec2 {
+        fn from(pos: Pos) -> Self {
+            let Pos { x, y } = pos;
+            Self { x, y }
+        }
+    }
+    impl From<Offset> for bevy15_math::IVec2 {
+        fn from(offset: Offset) -> Self {
+            let Offset { x, y } = offset;
+            Self { x, y }
+        }
+    }
+
+    impl From<bevy15_math::IVec2> for Pos {
+        fn from(ivec: bevy15_math::IVec2) -> Self {
+            let bevy15_math::IVec2 { x, y } = ivec;
+            Self { x, y }
+        }
+    }
+    impl From<Rect> for bevy15_math::IRect {
+        fn from(value: Rect) -> Self {
+            let Rect { x1, y1, x2, y2 } = value;
+            Self::new(x1, y1, x2, y2)
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
