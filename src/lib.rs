@@ -71,6 +71,7 @@ impl Pos {
         DIRECTIONS.map(|c| *self + c)
     }
     /// Returns the offset from the origin.
+    #[must_use]
     pub fn as_offset(self) -> Offset {
         self - Pos::ZERO
     }
@@ -476,6 +477,7 @@ impl Rect {
         Self::new(pos.x, pos.x, pos.y, pos.y)
     }
     /// Returns the smallest Rect containing `self` and `pos`.
+    #[must_use]
     pub fn expand_to_fit(self, pos: Pos) -> Self {
         Self {
             x1: self.x1.min(pos.x),
@@ -485,6 +487,7 @@ impl Rect {
         }
     }
     /// Returns the smallest Rect containing `self` and `pos`.
+    #[must_use]
     pub fn expand_to_fit_rect(self, other: Self) -> Self {
         self.expand_to_fit(other.bottomleft())
             .expand_to_fit(other.topright())
@@ -631,6 +634,7 @@ impl Rect {
         *self + Offset::new(offset_x, 0)
     }
 
+    #[must_use]
     pub fn is_on_edge(&self, pos: Pos) -> bool {
         [
             self.top_edge(),
