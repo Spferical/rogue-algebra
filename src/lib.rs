@@ -53,9 +53,10 @@ pub struct Pos {
 }
 
 impl Pos {
+    pub const ZERO: Pos = Pos::new(0, 0);
     /// Creates a new Pos at coordinate (x, y).
     #[must_use]
-    pub fn new(x: i32, y: i32) -> Pos {
+    pub const fn new(x: i32, y: i32) -> Pos {
         Pos { x, y }
     }
 
@@ -63,6 +64,15 @@ impl Pos {
     #[must_use]
     pub fn adjacent_cardinal(&self) -> [Pos; 4] {
         CARDINALS.map(|c| *self + c)
+    }
+    /// Returns the eight adjacent positions to this Pos in all 8 directions.
+    #[must_use]
+    pub fn adjacent_8(&self) -> [Pos; 8] {
+        DIRECTIONS.map(|c| *self + c)
+    }
+    /// Returns the offset from the origin.
+    pub fn as_offset(self) -> Offset {
+        self - Pos::ZERO
     }
 }
 
@@ -76,9 +86,10 @@ pub struct Offset {
 }
 
 impl Offset {
+    pub const ZERO: Offset = Offset::new(0, 0);
     /// Creates a new offset (x, y).
     #[must_use]
-    pub fn new(x: i32, y: i32) -> Offset {
+    pub const fn new(x: i32, y: i32) -> Offset {
         Offset { x, y }
     }
     /// The number of tiles it would take to walk walk to the other end of this
@@ -464,6 +475,20 @@ impl Rect {
     pub fn smol(pos: Pos) -> Self {
         Self::new(pos.x, pos.x, pos.y, pos.y)
     }
+    /// Returns the smallest Rect containing `self` and `pos`.
+    pub fn expand_to_fit(self, pos: Pos) -> Self {
+        Self {
+            x1: self.x1.min(pos.x),
+            y1: self.y1.min(pos.y),
+            x2: self.x2.max(pos.x),
+            y2: self.y2.max(pos.y),
+        }
+    }
+    /// Returns the smallest Rect containing `self` and `pos`.
+    pub fn expand_to_fit_rect(self, other: Self) -> Self {
+        self.expand_to_fit(other.bottomleft())
+            .expand_to_fit(other.topright())
+    }
     /// Creates the smallest rectangle containing all `positions`.
     #[must_use]
     pub fn new_containing(positions: &[Pos]) -> Self {
@@ -513,13 +538,13 @@ impl Rect {
         self.x1 += amt;
         self.x2 -= amt;
         if self.x2 < self.x1 {
-            self.x1 = (self.x1 + self.x2) / 2;
+            self.x1 = i32::midpoint(self.x1, self.x2);
             self.x2 = self.x1;
         }
         self.y1 += amt;
         self.y2 -= amt;
         if self.y2 < self.y1 {
-            self.y1 = (self.y1 + self.y2) / 2;
+            self.y1 = i32::midpoint(self.y1, self.y2);
             self.y2 = self.y1;
         }
         self
@@ -605,6 +630,17 @@ impl Rect {
         let offset_x = ((other.x2 + 1) - self.x1).max(0);
         *self + Offset::new(offset_x, 0)
     }
+
+    pub fn is_on_edge(&self, pos: Pos) -> bool {
+        [
+            self.top_edge(),
+            self.bottom_edge(),
+            self.left_edge(),
+            self.right_edge(),
+        ]
+        .iter()
+        .any(|e| e.contains(pos))
+    }
 }
 
 impl Add<Offset> for Rect {
@@ -652,29 +688,29 @@ impl IntoIterator for Rect {
     }
 }
 
-#[cfg(feature = "bevy15")]
-mod bevy15 {
+#[cfg(feature = "bevy16")]
+mod bevy16 {
     use super::*;
-    impl From<Pos> for bevy15_math::IVec2 {
+    impl From<Pos> for bevy16_math::IVec2 {
         fn from(pos: Pos) -> Self {
             let Pos { x, y } = pos;
             Self { x, y }
         }
     }
-    impl From<Offset> for bevy15_math::IVec2 {
+    impl From<Offset> for bevy16_math::IVec2 {
         fn from(offset: Offset) -> Self {
             let Offset { x, y } = offset;
             Self { x, y }
         }
     }
 
-    impl From<bevy15_math::IVec2> for Pos {
-        fn from(ivec: bevy15_math::IVec2) -> Self {
-            let bevy15_math::IVec2 { x, y } = ivec;
+    impl From<bevy16_math::IVec2> for Pos {
+        fn from(ivec: bevy16_math::IVec2) -> Self {
+            let bevy16_math::IVec2 { x, y } = ivec;
             Self { x, y }
         }
     }
-    impl From<Rect> for bevy15_math::IRect {
+    impl From<Rect> for bevy16_math::IRect {
         fn from(value: Rect) -> Self {
             let Rect { x1, y1, x2, y2 } = value;
             Self::new(x1, y1, x2, y2)
