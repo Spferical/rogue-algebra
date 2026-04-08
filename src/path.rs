@@ -1,4 +1,7 @@
-use std::{collections::HashSet, hash::Hash};
+use std::{
+    collections::{HashSet, VecDeque},
+    hash::Hash,
+};
 
 pub fn dfs<Pos: Clone + Hash + Eq>(
     starts: &[Pos],
@@ -8,7 +11,7 @@ pub fn dfs<Pos: Clone + Hash + Eq>(
         stack: starts.to_vec(),
         visited: starts.iter().cloned().collect::<HashSet<_>>(),
         reachable,
-        to_emit: starts.to_vec(),
+        to_emit: starts.iter().cloned().collect::<VecDeque<_>>(),
     }
 }
 
@@ -16,7 +19,7 @@ struct Dfs<Pos: Clone + Hash + Eq, R: FnMut(Pos) -> Vec<Pos>> {
     stack: Vec<Pos>,
     visited: HashSet<Pos>,
     reachable: R,
-    to_emit: Vec<Pos>,
+    to_emit: VecDeque<Pos>,
 }
 
 impl<Pos: Clone + Hash + Eq, R: FnMut(Pos) -> Vec<Pos>> Iterator for Dfs<Pos, R> {
@@ -24,7 +27,7 @@ impl<Pos: Clone + Hash + Eq, R: FnMut(Pos) -> Vec<Pos>> Iterator for Dfs<Pos, R>
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(p) = self.to_emit.pop() {
+            if let Some(p) = self.to_emit.pop_front() {
                 return Some(p);
             }
             if let Some(p) = self.stack.pop() {
@@ -60,7 +63,7 @@ struct BfsPaths<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Po
     new_periphery: Vec<Vec<Pos>>,
     visited: HashSet<Pos>,
     reachable: R,
-    to_emit: Vec<Vec<Pos>>,
+    to_emit: VecDeque<Vec<Pos>>,
     maxdist: usize,
 }
 
@@ -71,7 +74,7 @@ impl<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Pos) -> T> It
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(path) = self.to_emit.pop() {
+            if let Some(path) = self.to_emit.pop_front() {
                 return Some(path);
             }
             if let Some(mut path) = self.periphery.pop() {
@@ -80,7 +83,7 @@ impl<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Pos) -> T> It
                     if !self.visited.contains(&pos) {
                         self.visited.insert(pos.clone());
                         path.push(pos);
-                        self.to_emit.push(path.clone());
+                        self.to_emit.push_back(path.clone());
                         if path.len() < self.maxdist {
                             self.new_periphery.push(path.clone());
                         }
@@ -89,6 +92,7 @@ impl<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Pos) -> T> It
                 }
             } else if !self.new_periphery.is_empty() {
                 std::mem::swap(&mut self.periphery, &mut self.new_periphery);
+                self.periphery.reverse();
             } else {
                 return None;
             }
@@ -116,7 +120,7 @@ struct BfsDist<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Pos
     new_periphery: Vec<(usize, Pos)>,
     visited: HashSet<Pos>,
     reachable: R,
-    to_emit: Vec<(usize, Pos)>,
+    to_emit: VecDeque<(usize, Pos)>,
     maxdist: usize,
 }
 
@@ -127,7 +131,7 @@ impl<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Pos) -> T> It
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(path) = self.to_emit.pop() {
+            if let Some(path) = self.to_emit.pop_front() {
                 return Some(path);
             }
             if let Some((dist, node)) = self.periphery.pop() {
@@ -135,7 +139,7 @@ impl<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Pos) -> T> It
                 for pos in reachable.into_iter() {
                     if !self.visited.contains(&pos) {
                         self.visited.insert(pos.clone());
-                        self.to_emit.push((dist + 1, pos.clone()));
+                        self.to_emit.push_back((dist + 1, pos.clone()));
                         if dist + 1 < self.maxdist {
                             self.new_periphery.push((dist + 1, pos.clone()));
                         }
@@ -143,6 +147,7 @@ impl<Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos>, R: FnMut(Pos) -> T> It
                 }
             } else if !self.new_periphery.is_empty() {
                 std::mem::swap(&mut self.periphery, &mut self.new_periphery);
+                self.periphery.reverse();
             } else {
                 return None;
             }
@@ -167,4 +172,22 @@ pub fn build_dijkstra_map<'a, Pos: Clone + Hash + Eq, T: IntoIterator<Item = Pos
         .iter()
         .map(|p| (p.clone(), 0))
         .chain(bfs_dist(starts, maxdist, reachable).map(|(dist, pos)| (pos, dist)))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Pos, DIRECTIONS};
+
+    #[test]
+    fn test_bfs_order() {
+        let visited =
+            super::bfs(&[Pos::new(0, 0)], 2, |p| DIRECTIONS.map(|o| p + o)).collect::<Vec<Pos>>();
+        let origin = Pos::new(0, 0);
+        assert_eq!(visited[0], origin);
+        assert_eq!(visited[1], origin + DIRECTIONS[0]);
+        assert_eq!(visited[2], origin + DIRECTIONS[1]);
+        assert_eq!(visited[3], origin + DIRECTIONS[2]);
+        assert_eq!(visited[4], origin + DIRECTIONS[3]);
+        assert_eq!(visited[9], origin + DIRECTIONS[0] + DIRECTIONS[0]);
+    }
 }
